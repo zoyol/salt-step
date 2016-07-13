@@ -141,9 +141,11 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     protected static final String SALT_API_EAUTH_OPTION_NAME = "SALT_API_EAUTH";
     protected static final String SALT_USER_OPTION_NAME = "SALT_USER";
     protected static final String SALT_PASSWORD_OPTION_NAME = "SALT_PASSWORD";
-    
-    @PluginProperty(title = SALT_API_END_POINT_OPTION_NAME, description = "Salt Api end point", required = true, defaultValue = "${option."
-            + SALT_API_END_POINT_OPTION_NAME + "}")
+
+    protected static final String SALT_API_END_POINT_EXPRESSION = "${option.SALT_API_END_POINT}";
+    protected static final String SALT_API_EAUTH_EXPRESSION = "${option.SALT_API_EAUTH}";
+
+    @PluginProperty(title = SALT_API_END_POINT_OPTION_NAME, description = "Salt Api end point", required = true, defaultValue = SALT_API_END_POINT_EXPRESSION)
     protected String saltEndpoint;
 
     @PluginProperty(title = SALT_API_VERSION_OPTION_NAME, description = "Salt Api version", required = false)
@@ -153,8 +155,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     @PluginProperty(title = SALT_API_FUNCTION_OPTION_NAME, description = "Function (including args) to invoke on salt minions", required = true)
     protected String function;
 
-    @PluginProperty(title = SALT_API_EAUTH_OPTION_NAME, description = "Salt Master's external authentication system", required = true, defaultValue = "${option."
-            + SALT_API_EAUTH_OPTION_NAME + "}")
+    @PluginProperty(title = SALT_API_EAUTH_OPTION_NAME, description = "Salt Master's external authentication system", required = true, defaultValue = SALT_API_EAUTH_EXPRESSION)
     protected String eAuth;
 
     protected LogWrapper logWrapper;
@@ -218,6 +219,38 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
         }
         String user = optionData.get(SALT_USER_OPTION_NAME);
         String password = optionData.get(SALT_PASSWORD_OPTION_NAME);
+
+        // Extract project globals from context        
+        Map<String, String> projectData = context.getDataContext().get("globals");
+        
+        if (projectData != null) {
+            if (saltEndpoint == null || saltEndpoint.equals(SALT_API_END_POINT_EXPRESSION)) {
+                String defaultValue = projectData.get(SALT_API_END_POINT_OPTION_NAME);
+                if (defaultValue != null)
+                    saltEndpoint = defaultValue;
+            }
+
+                logWrapper.info("eAuth=" + eAuth + "|" + SALT_API_EAUTH_EXPRESSION);
+            if (eAuth == null || eAuth.equals(SALT_API_EAUTH_EXPRESSION)) {
+                String defaultValue = projectData.get(SALT_API_EAUTH_OPTION_NAME);
+                if (defaultValue != null)
+                    eAuth = defaultValue;
+            }
+
+            if (user == null) {
+                String defaultValue = projectData.get(SALT_USER_OPTION_NAME);
+                if (defaultValue != null)
+                    user = defaultValue;
+            }
+
+            if (password == null) {
+                String defaultValue = projectData.get(SALT_PASSWORD_OPTION_NAME);
+                if (defaultValue != null)
+                    password = defaultValue;
+            }
+        }
+
+        logWrapper.debug("endpoint=%s\neauth=%s\nuser=%s\npassword=(%s)", saltEndpoint, eAuth, user, password == null ? "no" : "yes");
 
         validate(user, password, entry);
 

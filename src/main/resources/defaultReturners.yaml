@@ -8,3 +8,5 @@ handlerMappings:
     file.touch:  *alwaysSuccessful
     file.append: *alwaysSuccessful
     file.remove: *alwaysSuccessful
+    test.ping: *alwaysSuccessful
+
