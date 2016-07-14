@@ -272,11 +272,13 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
             String jobOutput = waitForJidResponse(client, authToken, dispatchedJid, entry.getNodename());
             SaltReturnHandler handler = returnHandlerRegistry.getHandlerFor(function.split(" ", 2)[0],
                     defaultReturnHandler);
-            logWrapper.debug("Using [%s] as salt's response handler", handler);
+            logWrapper.debug("Using [%s] as salt's response handler for the following raw response", handler);
             SaltReturnResponse response = handler.extractResponse(jobOutput);
 
             for (String out : response.getStandardOutput()) {
-                logWrapper.info(out);
+                for (String outLine : out.split("\\\\n")) {
+                	logWrapper.info(outLine);
+		}
             }
             for (String err : response.getStandardError()) {
                 logWrapper.error(err);
