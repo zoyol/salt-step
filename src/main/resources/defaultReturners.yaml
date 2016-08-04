@@ -4,7 +4,9 @@ defaultCommandParser: &defaultCommandParser !!org.rundeck.plugin.salt.output.Sal
 alwaysSuccessful: &alwaysSuccessful !!org.rundeck.plugin.salt.output.DefaultSaltReturnHandler { exitCode: 0 }
 
 handlerMappings:
+    cmd.run: *defaultCommandParser
     cmd.run_all: *defaultCommandParser
+    cmd.script: *defaultCommandParser
     file.touch:  *alwaysSuccessful
     file.append: *alwaysSuccessful
     file.remove: *alwaysSuccessful
