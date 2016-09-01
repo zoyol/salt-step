@@ -138,6 +138,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     protected static final String SALT_API_END_POINT_OPTION_NAME = "SALT_API_END_POINT";
     protected static final String SALT_API_VERSION_OPTION_NAME = "SALT_API_VERSION";
     protected static final String SALT_API_FUNCTION_OPTION_NAME = "Function";
+    protected static final String SALT_API_TARGET_OPTION_NAME = "Target";
     protected static final String SALT_API_EAUTH_OPTION_NAME = "SALT_API_EAUTH";
     protected static final String SALT_USER_OPTION_NAME = "SALT_USER";
     protected static final String SALT_PASSWORD_OPTION_NAME = "SALT_PASSWORD";
@@ -154,6 +155,10 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     @TextArea
     @PluginProperty(title = SALT_API_FUNCTION_OPTION_NAME, description = "Function (including args) to invoke on salt minions", required = true)
     protected String function;
+
+    @TextArea
+    @PluginProperty(title = SALT_API_TARGET_OPTION_NAME, description = "Specifies target minions", required = false)
+    protected String target;
 
     @PluginProperty(title = SALT_API_EAUTH_OPTION_NAME, description = "Salt Master's external authentication system", required = true, defaultValue = SALT_API_EAUTH_EXPRESSION)
     protected String eAuth;
@@ -210,12 +215,14 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
             throws NodeStepException {
         // Initialize logger for all actions
         setLogWrapper(context.getLogger());
-        
+        target = (target == null) ? entry.getNodename() : target;
+        logWrapper.debug("Target is %s", target);
+
         // Extract options from context.
         Map<String, String> optionData = context.getDataContext().get(RUNDECK_DATA_CONTEXT_OPTION_KEY);
         if (optionData == null) {
             throw new NodeStepException("Missing data context.", SaltApiNodeStepFailureReason.ARGUMENTS_MISSING,
-                    entry.getNodename());
+                    target);
         }
         String user = optionData.get(SALT_USER_OPTION_NAME);
         String password = optionData.get(SALT_PASSWORD_OPTION_NAME);
@@ -263,13 +270,14 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
 
             if (authToken == null) {
                 throw new NodeStepException("Authentication failure",
-                        SaltApiNodeStepFailureReason.AUTHENTICATION_FAILURE, entry.getNodename());
+                        SaltApiNodeStepFailureReason.AUTHENTICATION_FAILURE, target);
             }
 
+
             Set<String> secureData = extractSecureDataFromDataContext(context.getDataContext());
-            String dispatchedJid = submitJob(capability, client, authToken, entry.getNodename(), secureData);
+            String dispatchedJid = submitJob(capability, client, authToken, target, secureData);
             logWrapper.info("Received jid [%s] for submitted job", dispatchedJid);
-            String jobOutput = waitForJidResponse(client, authToken, dispatchedJid, entry.getNodename());
+            String jobOutput = waitForJidResponse(client, authToken, dispatchedJid, target);
             SaltReturnHandler handler = returnHandlerRegistry.getHandlerFor(function.split(" ", 2)[0],
                     defaultReturnHandler);
             logWrapper.debug("Using [%s] as salt's response handler for the following raw response", handler);
@@ -285,24 +293,24 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
             }
             if (!response.isSuccessful()) {
                 throw new NodeStepException(String.format("Execution failed on minion with exit code %d",
-                        response.getExitCode()), SaltApiNodeStepFailureReason.EXIT_CODE, entry.getNodename());
+                        response.getExitCode()), SaltApiNodeStepFailureReason.EXIT_CODE, target);
             }
             
             if (capability.getSupportsLogout()) {
                 logoutQuietly(client, authToken);
             }
         } catch (SaltReturnResponseParseException e) {
-            throw new NodeStepException(e, SaltApiNodeStepFailureReason.SALT_API_FAILURE, entry.getNodename());
+            throw new NodeStepException(e, SaltApiNodeStepFailureReason.SALT_API_FAILURE, target);
         } catch (InterruptedException e) {
-            throw new NodeStepException(e, SaltApiNodeStepFailureReason.INTERRUPTED, entry.getNodename());
+            throw new NodeStepException(e, SaltApiNodeStepFailureReason.INTERRUPTED, target);
         } catch (SaltTargettingMismatchException e) {
-            throw new NodeStepException(e, SaltApiNodeStepFailureReason.SALT_TARGET_MISMATCH, entry.getNodename());
+            throw new NodeStepException(e, SaltApiNodeStepFailureReason.SALT_TARGET_MISMATCH, target);
         } catch (SaltApiException e) {
-            throw new NodeStepException(e, SaltApiNodeStepFailureReason.SALT_API_FAILURE, entry.getNodename());
+            throw new NodeStepException(e, SaltApiNodeStepFailureReason.SALT_API_FAILURE, target);
         } catch (HttpException e) {
-            throw new NodeStepException(e, SaltApiNodeStepFailureReason.COMMUNICATION_FAILURE, entry.getNodename());
+            throw new NodeStepException(e, SaltApiNodeStepFailureReason.COMMUNICATION_FAILURE, target);
         } catch (IOException e) {
-            throw new NodeStepException(e, SaltApiNodeStepFailureReason.COMMUNICATION_FAILURE, entry.getNodename());
+            throw new NodeStepException(e, SaltApiNodeStepFailureReason.COMMUNICATION_FAILURE, target);
         }
     }
     

@@ -4,7 +4,7 @@ defaultCommandParser: &defaultCommandParser !!org.rundeck.plugin.salt.output.Sal
 alwaysSuccessful: &alwaysSuccessful !!org.rundeck.plugin.salt.output.DefaultSaltReturnHandler { exitCode: 0 }
 
 handlerMappings:
-    cloud: *defaultCommandParser
+    cloud: *alwaysSuccessful
     cmd.run: *defaultCommandParser
     cmd.run_all: *defaultCommandParser
     cmd.script: *defaultCommandParser
