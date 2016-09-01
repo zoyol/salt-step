@@ -5,11 +5,9 @@ alwaysSuccessful: &alwaysSuccessful !!org.rundeck.plugin.salt.output.DefaultSalt
 
 handlerMappings:
     cloud: *alwaysSuccessful
-    cmd.run: *defaultCommandParser
-    cmd.run_all: *defaultCommandParser
-    cmd.script: *defaultCommandParser
-    file.touch:  *alwaysSuccessful
-    file.append: *alwaysSuccessful
-    file.remove: *alwaysSuccessful
-    test.ping: *alwaysSuccessful
+    cmd: *defaultCommandParser
+    cp: *alwaysSuccessful
+    file: *alwaysSuccessful
+    pkg: *alwaysSuccessful
+    test: *alwaysSuccessful
 
