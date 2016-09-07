@@ -26,13 +26,12 @@
 
 package org.rundeck.plugin.salt.util;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utility for parsing argument strings respecting quotes and
@@ -80,12 +79,13 @@ public class ArgumentParser {
 
     /**
      * Parses the given line and returns all non-empty segments.
-     * 
+     *
      * @throws IllegalArgumentException
      *             if the quotes are unbalanced.
      */
     public List<String> parse(String line) {
         boolean inQuote = false;
+        boolean inNamedArg = false;
         Character lastQuote = null;
 
         List<String> results = Lists.newLinkedList();
@@ -112,13 +112,16 @@ public class ArgumentParser {
                     }
                 } else {
                     // If not currently in a quote, open a new segment
-                    if (currentSegment.length() > 0) {
+                    if (!inNamedArg && currentSegment.length() > 0) {
                         results.add(currentSegment.toString());
                         currentSegment = new StringBuilder();
                     }
                     lastQuote = currentChar;
                     inQuote = true;
                 }
+            } else if (!inQuote && !inNamedArg && currentSegment.length() > 0 && currentChar == '=') {
+                inNamedArg = true;
+                currentSegment.append(currentChar);
             } else if (String.valueOf(currentChar).matches(separatorCharSetRegex)) {
                 // If this is a separator, separate the segment if not in quotes
                 if (inQuote) {
@@ -126,6 +129,7 @@ public class ArgumentParser {
                 } else {
                     if (currentSegment.length() > 0) {
                         results.add(currentSegment.toString());
+                        inNamedArg = false;
                         currentSegment = new StringBuilder();
                     }
                 }
@@ -134,11 +138,11 @@ public class ArgumentParser {
                 currentSegment.append(currentChar);
             }
         }
-        
+
         if (currentSegment.length() > 0) {
             results.add(currentSegment.toString());
         }
-        
+
         if (inQuote) {
             throw new IllegalArgumentException("Quotes are unbalanced.");
         }

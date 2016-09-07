@@ -202,4 +202,16 @@ public class ArgumentParserTest {
         Assert.assertEquals('\'', quoteCharacters[1]);
         Assert.assertEquals('\\', ArgumentParser.DEFAULT_ARGUMENT_SPLITTER.escapeCharacter);
     }
+
+    @Test
+    public void testParseArgsWithKwargs() {
+        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\').parse("module.command arg1 arg2 namedArg1=namedArg1Value namedArg2='named arg 2 value' namedArg3='{\"named\": { \"arg3\": \"value\" } }'");
+        Assert.assertEquals(6, args.size());
+        Assert.assertEquals("module.command", args.get(0));
+        Assert.assertEquals("arg1", args.get(1));
+        Assert.assertEquals("arg2", args.get(2));
+        Assert.assertEquals("namedArg1=namedArg1Value", args.get(3));
+        Assert.assertEquals("namedArg2=named arg 2 value", args.get(4));
+        Assert.assertEquals("namedArg3={\"named\": { \"arg3\": \"value\" } }", args.get(5));
+    }
 }
