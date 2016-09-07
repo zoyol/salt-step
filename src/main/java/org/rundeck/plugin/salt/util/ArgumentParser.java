@@ -147,7 +147,7 @@ public class ArgumentParser {
         }
 
         if (currentSegment.length() > 0) {
-            results.add(new BasicNameValuePair("", currentSegment.toString()));
+            results.add(new BasicNameValuePair(inNamedArg ? currentArgName : "", currentSegment.toString()));
         }
 
         if (inQuote) {
