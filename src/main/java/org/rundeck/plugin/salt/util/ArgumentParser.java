@@ -29,6 +29,8 @@ package org.rundeck.plugin.salt.util;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 
 import java.util.Arrays;
 import java.util.List;
@@ -83,12 +85,13 @@ public class ArgumentParser {
      * @throws IllegalArgumentException
      *             if the quotes are unbalanced.
      */
-    public List<String> parse(String line) {
+    public List<NameValuePair> parse(String line) {
         boolean inQuote = false;
         boolean inNamedArg = false;
         Character lastQuote = null;
 
-        List<String> results = Lists.newLinkedList();
+        List<NameValuePair> results = Lists.newLinkedList();
+        String currentArgName = null;
         StringBuilder currentSegment = new StringBuilder();
 
         for (int i = 0; i < line.length(); i++) {
@@ -103,7 +106,9 @@ public class ArgumentParser {
                         lastQuote = null;
                         inQuote = false;
                         if (currentSegment.length() > 0) {
-                            results.add(currentSegment.toString());
+                            results.add(new BasicNameValuePair(inNamedArg ? currentArgName : "", currentSegment.toString()));
+                            inNamedArg = false;
+                            currentArgName = null;
                             currentSegment = new StringBuilder();
                         }
                     } else {
@@ -113,7 +118,7 @@ public class ArgumentParser {
                 } else {
                     // If not currently in a quote, open a new segment
                     if (!inNamedArg && currentSegment.length() > 0) {
-                        results.add(currentSegment.toString());
+                        results.add(new BasicNameValuePair("", currentSegment.toString()));
                         currentSegment = new StringBuilder();
                     }
                     lastQuote = currentChar;
@@ -121,15 +126,17 @@ public class ArgumentParser {
                 }
             } else if (!inQuote && !inNamedArg && currentSegment.length() > 0 && currentChar == '=') {
                 inNamedArg = true;
-                currentSegment.append(currentChar);
+                currentArgName =  currentSegment.toString();
+                currentSegment = new StringBuilder();
             } else if (String.valueOf(currentChar).matches(separatorCharSetRegex)) {
                 // If this is a separator, separate the segment if not in quotes
                 if (inQuote) {
                     currentSegment.append(currentChar);
                 } else {
                     if (currentSegment.length() > 0) {
-                        results.add(currentSegment.toString());
+                        results.add(new BasicNameValuePair(inNamedArg ? currentArgName : "", currentSegment.toString()));
                         inNamedArg = false;
+                        currentArgName = null;
                         currentSegment = new StringBuilder();
                     }
                 }
@@ -140,7 +147,7 @@ public class ArgumentParser {
         }
 
         if (currentSegment.length() > 0) {
-            results.add(currentSegment.toString());
+            results.add(new BasicNameValuePair("", currentSegment.toString()));
         }
 
         if (inQuote) {

@@ -339,19 +339,22 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     protected String submitJob(SaltApiCapability capability, HttpClient client, String authToken, String minionId, Set<String> secureData) throws HttpException, IOException,
             SaltApiException, SaltTargettingMismatchException, InterruptedException {
         List<NameValuePair> params = Lists.newArrayList();
-        List<String> args = ArgumentParser.DEFAULT_ARGUMENT_SPLITTER.parse(function);
-        params.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0)));
+        List<NameValuePair> args = ArgumentParser.DEFAULT_ARGUMENT_SPLITTER.parse(function);
+        params.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0).getValue()));
         params.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, minionId));
         
         List<NameValuePair> printableParams = Lists.newArrayList();
         printableParams.addAll(params);
         for (int i = 1; i < args.size(); i++) {
-            String value = args.get(i);
-            params.add(new BasicNameValuePair(SALT_API_ARGUMENTS_PARAM_NAME, value));
+            String name = args.get(i).getName().equals("") ? SALT_API_ARGUMENTS_PARAM_NAME : args.get(i).getName();
+            String value = args.get(i).getValue();
+
+            params.add(new BasicNameValuePair(name, value));
+
             for (String s : secureData) {
                 value = StringUtils.replace(value, s, SECURE_OPTION_VALUE);
             }
-            printableParams.add(new BasicNameValuePair(SALT_API_ARGUMENTS_PARAM_NAME, value));
+            printableParams.add(new BasicNameValuePair(name, value));
         }
         UrlEncodedFormEntity postEntity = new UrlEncodedFormEntity(params, CHAR_SET_ENCODING);
         postEntity.setContentEncoding(CHAR_SET_ENCODING);

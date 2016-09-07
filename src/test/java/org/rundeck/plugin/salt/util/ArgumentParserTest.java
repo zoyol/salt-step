@@ -28,6 +28,7 @@ package org.rundeck.plugin.salt.util;
 
 import java.util.List;
 
+import org.apache.http.NameValuePair;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,19 +36,19 @@ public class ArgumentParserTest {
 
     @Test
     public void testParse() {
-        List<String> args = new ArgumentParser("\\s").parse("1 2 3");
+        List<NameValuePair> args = new ArgumentParser("\\s").parse("1 2 3");
         Assert.assertEquals(3, args.size());
-        Assert.assertEquals("1", args.get(0));
-        Assert.assertEquals("2", args.get(1));
-        Assert.assertEquals("3", args.get(2));
+        Assert.assertEquals("1", args.get(0).getValue());
+        Assert.assertEquals("2", args.get(1).getValue());
+        Assert.assertEquals("3", args.get(2).getValue());
     }
 
     @Test
     public void testParseWithDoubleQuotedString() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '"' }).parse("\"1 2\" 3");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '"' }).parse("\"1 2\" 3");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("1 2", args.get(0));
-        Assert.assertEquals("3", args.get(1));
+        Assert.assertEquals("1 2", args.get(0).getValue());
+        Assert.assertEquals("3", args.get(1).getValue());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -62,10 +63,10 @@ public class ArgumentParserTest {
 
     @Test
     public void testParseWithSingleQuotedString() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'' }).parse("'1 2' 3");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'' }).parse("'1 2' 3");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("1 2", args.get(0));
-        Assert.assertEquals("3", args.get(1));
+        Assert.assertEquals("1 2", args.get(0).getValue());
+        Assert.assertEquals("3", args.get(1).getValue());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -80,108 +81,108 @@ public class ArgumentParserTest {
 
     @Test
     public void testParseWithSingleAndDoubleQuotedString() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }).parse("'1 2' \"3 4\"");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }).parse("'1 2' \"3 4\"");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("1 2", args.get(0));
-        Assert.assertEquals("3 4", args.get(1));
+        Assert.assertEquals("1 2", args.get(0).getValue());
+        Assert.assertEquals("3 4", args.get(1).getValue());
     }
 
     @Test
     public void testParseWithSingleAndDoubleQuotedStringWithoutSeparator() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }).parse("'1 2'\"3 4\"");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }).parse("'1 2'\"3 4\"");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("1 2", args.get(0));
-        Assert.assertEquals("3 4", args.get(1));
+        Assert.assertEquals("1 2", args.get(0).getValue());
+        Assert.assertEquals("3 4", args.get(1).getValue());
     }
 
     @Test
     public void testParseWithSingleQuotedStringWithoutSeparator() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }).parse("0'1 2'3");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }).parse("0'1 2'3");
         Assert.assertEquals(3, args.size());
-        Assert.assertEquals("0", args.get(0));
-        Assert.assertEquals("1 2", args.get(1));
-        Assert.assertEquals("3", args.get(2));
+        Assert.assertEquals("0", args.get(0).getValue());
+        Assert.assertEquals("1 2", args.get(1).getValue());
+        Assert.assertEquals("3", args.get(2).getValue());
     }
 
     @Test
     public void testParseWithTabs() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '"' }).parse("\"1\t2\"\t3");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '"' }).parse("\"1\t2\"\t3");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("1\t2", args.get(0));
-        Assert.assertEquals("3", args.get(1));
+        Assert.assertEquals("1\t2", args.get(0).getValue());
+        Assert.assertEquals("3", args.get(1).getValue());
     }
 
     @Test
     public void testParseWithMultipleSpaces() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '"' }).parse("\"1 2\"     3");
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '"' }).parse("\"1 2\"     3");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("1 2", args.get(0));
-        Assert.assertEquals("3", args.get(1));
+        Assert.assertEquals("1 2", args.get(0).getValue());
+        Assert.assertEquals("3", args.get(1).getValue());
     }
 
     @Test
     public void testParseSingleQuoteWithNestedDoubleQuotes() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("cmd.run 'echo \"some message\"'");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("cmd.run", args.get(0));
-        Assert.assertEquals("echo \"some message\"", args.get(1));
+        Assert.assertEquals("cmd.run", args.get(0).getValue());
+        Assert.assertEquals("echo \"some message\"", args.get(1).getValue());
     }
 
     @Test
     public void testParseDoubleQuoteWithNestedSingleQuotes() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("cmd.run \"echo 'some message'\"");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("cmd.run", args.get(0));
-        Assert.assertEquals("echo 'some message'", args.get(1));
+        Assert.assertEquals("cmd.run", args.get(0).getValue());
+        Assert.assertEquals("echo 'some message'", args.get(1).getValue());
     }
 
     @Test
     public void testParseSingleQuoteWithNestedEscapedSingleQuotes() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("cmd.run 'echo \\'some message\\''");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("cmd.run", args.get(0));
-        Assert.assertEquals("echo 'some message'", args.get(1));
+        Assert.assertEquals("cmd.run", args.get(0).getValue());
+        Assert.assertEquals("echo 'some message'", args.get(1).getValue());
     }
 
     @Test
     public void testParseDoubleQuoteWithNestedEscapedDoubleQuotes() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("cmd.run \"echo \\\"some message\\\"\"");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("cmd.run", args.get(0));
-        Assert.assertEquals("echo \"some message\"", args.get(1));
+        Assert.assertEquals("cmd.run", args.get(0).getValue());
+        Assert.assertEquals("echo \"some message\"", args.get(1).getValue());
     }
     
     @Test
     public void testParseEscapeCharacterWithoutFollowingQuote() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("cmd.run \"echo \\\"some m\\essage\\\"\"");
         Assert.assertEquals(2, args.size());
-        Assert.assertEquals("cmd.run", args.get(0));
-        Assert.assertEquals("echo \"some m\\essage\"", args.get(1));
+        Assert.assertEquals("cmd.run", args.get(0).getValue());
+        Assert.assertEquals("echo \"some m\\essage\"", args.get(1).getValue());
     }
     
     @Test
     public void testParseTrailingEscapeCharacterWithoutFollowingQuote() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("cmd.run \"echo \\\"some message\\\"\"\\");
         Assert.assertEquals(3, args.size());
-        Assert.assertEquals("cmd.run", args.get(0));
-        Assert.assertEquals("echo \"some message\"", args.get(1));
-        Assert.assertEquals("\\", args.get(2));
+        Assert.assertEquals("cmd.run", args.get(0).getValue());
+        Assert.assertEquals("echo \"some message\"", args.get(1).getValue());
+        Assert.assertEquals("\\", args.get(2).getValue());
     }
     
     @Test
     public void testParseMultiline() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\')
                 .parse("file.append /tmp/some_script.sh \"#! /bin/bash -x \nfor i in `ls /tmp`; do\n  ls -la /tmp/$i\ndone\"");
         Assert.assertEquals(3, args.size());
-        Assert.assertEquals("file.append", args.get(0));
-        Assert.assertEquals("/tmp/some_script.sh", args.get(1));
-        Assert.assertEquals("#! /bin/bash -x \nfor i in `ls /tmp`; do\n  ls -la /tmp/$i\ndone", args.get(2));
+        Assert.assertEquals("file.append", args.get(0).getValue());
+        Assert.assertEquals("/tmp/some_script.sh", args.get(1).getValue());
+        Assert.assertEquals("#! /bin/bash -x \nfor i in `ls /tmp`; do\n  ls -la /tmp/$i\ndone", args.get(2).getValue());
     }
     
     @Test
@@ -205,13 +206,21 @@ public class ArgumentParserTest {
 
     @Test
     public void testParseArgsWithKwargs() {
-        List<String> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\').parse("module.command arg1 arg2 namedArg1=namedArg1Value namedArg2='named arg 2 value' namedArg3='{\"named\": { \"arg3\": \"value\" } }'");
-        Assert.assertEquals(6, args.size());
-        Assert.assertEquals("module.command", args.get(0));
-        Assert.assertEquals("arg1", args.get(1));
-        Assert.assertEquals("arg2", args.get(2));
-        Assert.assertEquals("namedArg1=namedArg1Value", args.get(3));
-        Assert.assertEquals("namedArg2=named arg 2 value", args.get(4));
-        Assert.assertEquals("namedArg3={\"named\": { \"arg3\": \"value\" } }", args.get(5));
+        List<NameValuePair> args = new ArgumentParser("\\s", new char[] { '\'', '"' }, '\\').parse("module.command arg '\"single quoted arg\"' \"'double quoted arg'\" namedArg=namedArgValue namedSingleQuotedArg='\"named single quoted arg\"' namedDoubleQuotedArg=\"'named double quoted arg'\"");
+        Assert.assertEquals(7, args.size());
+        Assert.assertEquals("module.command", args.get(0).getValue());
+
+        Assert.assertEquals("arg", args.get(1).getValue());
+        Assert.assertEquals("\"single quoted arg\"", args.get(2).getValue());
+        Assert.assertEquals("'double quoted arg'", args.get(3).getValue());
+
+        Assert.assertEquals("namedArg", args.get(4).getName());
+        Assert.assertEquals("namedArgValue", args.get(4).getValue());
+
+        Assert.assertEquals("namedSingleQuotedArg", args.get(5).getName());
+        Assert.assertEquals("\"named single quoted arg\"", args.get(5).getValue());
+
+        Assert.assertEquals("namedDoubleQuotedArg", args.get(6).getName());
+        Assert.assertEquals("'named double quoted arg'", args.get(6).getValue());
     }
 }
