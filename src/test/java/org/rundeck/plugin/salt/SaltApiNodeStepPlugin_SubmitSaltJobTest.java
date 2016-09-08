@@ -48,7 +48,7 @@ import com.google.common.collect.ImmutableSet;
 public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNodeStepPluginTest {
 
     protected static final String MINIONS_ENDPOINT = String.format("%s/minions", PARAM_ENDPOINT);
-    
+
     @Before
     public void setup() throws Exception {
         spyPlugin();
@@ -78,9 +78,6 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
 
         Assert.assertEquals("Expected mocked jid after submitting job", OUTPUT_JID,
                             plugin.submitJob(latestCapability, client, AUTH_TOKEN, PARAM_MINION_NAME, ImmutableSet.<String> of()));
-
-//        assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s&arg=%s&arg=%s", PARAM_FUNCTION, PARAM_MINION_NAME,
-//                                                     arg1, arg2);
 
         Gson gson = new Gson();
         assertThatSubmitSaltJobAttemptedSuccessfully("{\"arg\":[%s,%s],\"fun\":\"%s\",\"kwarg\":{},\"tgt\":\"%s\"}", gson.toJson(arg1), gson.toJson(arg2), PARAM_FUNCTION, PARAM_MINION_NAME);
@@ -155,54 +152,54 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
 
         assertThatSubmitSaltJobAttemptedSuccessfully();
     }
-    
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testSubmitJobHidesSecureOptions() throws Exception {
-        String secret = "greatgooglymoogly5f5DEyIKEyde\n" + 
+        String secret = "greatgooglymoogly5f5DEyIKEyde\n" +
 "wjXpeCuqX89nAaGwjSphBZsjlQldheNDra1+FqOJfBaKK3Zr1FKe5mr1si\n\n" +
-"QCqCM11FLV2/jdMS/c7aMwfhBvapN2Rh76LBRysm\n\n" + 
-"LV0prx1jqbdb8/UyxTyMlfJpRtn09wy+rL\n\n" + 
+"QCqCM11FLV2/jdMS/c7aMwfhBvapN2Rh76LBRysm\n\n" +
+"LV0prx1jqbdb8/UyxTyMlfJpRtn09wy+rL\n\n" +
 "f6qGO+Srwiy5/7lgNFJ7t3xT1w5NA==\n";
         Set<String> secureOptions = ImmutableSet.of(secret);
         secureOptionContext.put("foo", secret);
-        
+
         String command = "cmd.run";
         plugin.function = String.format("%s 'echo %s'", command, secret);
-        
+
         setupGoodSaltApiResponse();
         setupResponseCode(post, HttpStatus.SC_ACCEPTED);
         plugin.submitJob(latestCapability, client, AUTH_TOKEN, PARAM_MINION_NAME, secureOptions);
-        
+
         ArgumentCaptor<List> argCaptor = ArgumentCaptor.forClass(List.class);
         Mockito.verify(log, Mockito.times(1)).debug(Mockito.eq("Submitting job with arguments [%s]"), argCaptor.capture());
-        
+
         List<NameValuePair> pairs = (List<NameValuePair>) argCaptor.getValue();
         Assert.assertEquals("Expected 3 name pair values", 3, pairs.size());
-        
+
         NameValuePair commandPair = pairs.get(0);
         Assert.assertEquals("Expected command param name", SaltApiNodeStepPlugin.SALT_API_FUNCTION_PARAM_NAME, commandPair.getName());
         Assert.assertEquals("Expected command param value", command, commandPair.getValue());
-        
+
         NameValuePair minionPair = pairs.get(1);
         Assert.assertEquals("Expected minion param name", SaltApiNodeStepPlugin.SALT_API_TARGET_PARAM_NAME, minionPair.getName());
         Assert.assertEquals("Expected minion param value", PARAM_MINION_NAME, minionPair.getValue());
-        
+
         NameValuePair argPair = pairs.get(2);
-        Assert.assertEquals("Expected argument param name", "", argPair.getName());
+        Assert.assertEquals("Expected argument param name", SaltApiNodeStepPlugin.SALT_API_ARGUMENTS_PARAM_NAME, argPair.getName());
         Assert.assertEquals("Expected argument param value", "echo ****", argPair.getValue());
     }
-    
+
     @Test
     public void testExtractSecureDataFromDataContext() throws Exception {
         String secret = "bar";
         secureOptionContext.put("foo", secret);
-        
+
         Set<String> result = plugin.extractSecureDataFromDataContext(dataContext);
         Assert.assertEquals("Expected single secure option value", 1, result.size());
         Assert.assertTrue("Expected secret to be in result", result.contains(secret));
     }
-    
+
     @Test
     public void testExtractSecureDataFromDataContextNoSecureOptions() throws Exception {
         Set<String> result = plugin.extractSecureDataFromDataContext(dataContext);
@@ -210,7 +207,6 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
     }
 
     protected void assertThatSubmitSaltJobAttemptedSuccessfully() {
-        //assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s", PARAM_FUNCTION, PARAM_MINION_NAME);
         assertThatSubmitSaltJobAttemptedSuccessfully("{\"arg\":[],\"fun\":\"%s\",\"kwarg\":{},\"tgt\":\"%s\"}", PARAM_FUNCTION, PARAM_MINION_NAME);
     }
 

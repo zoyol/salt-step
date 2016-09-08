@@ -48,7 +48,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -91,7 +90,7 @@ import com.google.gson.reflect.TypeToken;
 /**
  * This plugin allows salt execution on a specific minion using the salt-api
  * interface.
- * 
+ *
  * Pre-requisites:
  * <ul>
  * <li>Salt-api must be installed.</li>
@@ -109,7 +108,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     }
 
     public static final String SERVICE_PROVIDER_NAME = "salt-api-exec";
-    
+
     protected static final String SECURE_OPTION_VALUE = "****";
 
     protected static final String LOGIN_RESOURCE = "/login";
@@ -118,7 +117,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     protected static final String LOGOUT_RESOURCE = "/logout";
     protected static final String SALT_AUTH_TOKEN_HEADER = "X-Auth-Token";
     protected static final String CHAR_SET_ENCODING = "UTF-8";
-    protected static final String REQUEST_CONTENT_TYPE = "application/json";
+    protected static final String REQUEST_CONTENT_TYPE = "application/x-www-form-urlencoded";
     protected static final String REQUEST_ACCEPT_HEADER_NAME = "Accept";
     protected static final String JSON_RESPONSE_ACCEPT_TYPE = "application/json";
     protected static final String YAML_RESPONSE_ACCEPT_TYPE = "application/x-yaml";
@@ -229,9 +228,9 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
         String user = optionData.get(SALT_USER_OPTION_NAME);
         String password = optionData.get(SALT_PASSWORD_OPTION_NAME);
 
-        // Extract project globals from context        
+        // Extract project globals from context
         Map<String, String> projectData = context.getDataContext().get("globals");
-        
+
         if (projectData != null) {
             if (saltEndpoint == null || saltEndpoint.equals(SALT_API_END_POINT_EXPRESSION)) {
                 String defaultValue = projectData.get(SALT_API_END_POINT_OPTION_NAME);
@@ -266,7 +265,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
         try {
             SaltApiCapability capability = getSaltApiCapability();
             logWrapper.debug("Using salt-api version: [%s]", capability);
-            
+
             HttpClient client = httpFactory.createHttpClient();
             String authToken = authenticate(capability, client, user, password);
 
@@ -297,7 +296,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
                 throw new NodeStepException(String.format("Execution failed on minion with exit code %d",
                         response.getExitCode()), SaltApiNodeStepFailureReason.EXIT_CODE, target);
             }
-            
+
             if (capability.getSupportsLogout()) {
                 logoutQuietly(client, authToken);
             }
@@ -315,7 +314,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
             throw new NodeStepException(e, SaltApiNodeStepFailureReason.COMMUNICATION_FAILURE, target);
         }
     }
-    
+
     /**
      * @return collection of secure data values from data context.
      */
@@ -329,10 +328,10 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
             return ImmutableSet.of();
         }
     }
-    
+
     /**
      * Submits the job to salt-api using the class function and args.
-     * 
+     *
      * @return the jid of the submitted job
      * @throws HttpException
      *             if there was a communication failure with salt-api
@@ -341,48 +340,42 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     protected String submitJob(SaltApiCapability capability, HttpClient client, String authToken, String minionId, Set<String> secureData) throws HttpException, IOException,
             SaltApiException, SaltTargettingMismatchException, InterruptedException {
 
-        //List<NameValuePair> params = Lists.newArrayList();
         List<NameValuePair> args = ArgumentParser.DEFAULT_ARGUMENT_SPLITTER.parse(function);
-        //params.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0).getValue()));
-        //params.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, minionId));
 
-
-        SaltApiRequest apiRequest = new SaltApiRequest();
-        apiRequest.tgt = minionId;
-        apiRequest.fun = args.get(0).getValue();
+        SaltApiRequest req = new SaltApiRequest();
+        req.tgt = minionId;
+        req.fun = args.get(0).getValue();
 
         List<NameValuePair> printableParams = Lists.newArrayList();
-        printableParams.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0).getValue()));
-        printableParams.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, minionId));
-
+        printableParams.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, req.fun));
+        printableParams.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, req.tgt));
         for (int i = 1; i < args.size(); i++) {
-            NameValuePair arg = args.get(i);
+            String name = args.get(i).getName().equals("") ? SALT_API_ARGUMENTS_PARAM_NAME : args.get(i).getName();
+            String value = args.get(i).getValue();
 
-            if (arg.getName().equals(""))
-                apiRequest.arg.add(arg.getValue());
+            if (name.equals(SALT_API_ARGUMENTS_PARAM_NAME))
+                req.arg.add(value);
             else
-                apiRequest.kwarg.put(arg.getName(), arg.getValue());
-
-            String value = arg.getValue();
+                req.kwarg.put(name, value);
 
             for (String s : secureData) {
                 value = StringUtils.replace(value, s, SECURE_OPTION_VALUE);
             }
-            printableParams.add(new BasicNameValuePair(arg.getName(), value));
+            printableParams.add(new BasicNameValuePair(name, value));
         }
 
-        //UrlEncodedFormEntity postEntity = new UrlEncodedFormEntity(params, CHAR_SET_ENCODING);
-        //postEntity.setContentEncoding(CHAR_SET_ENCODING);
-        //postEntity.setContentType(REQUEST_CONTENT_TYPE);
 
-        StringEntity postEntity = new StringEntity(new Gson().toJson(apiRequest));
+
+
+        StringEntity postEntity = new StringEntity(new Gson().toJson(req));
+        //postEntity.setContentEncoding(CHAR_SET_ENCODING);
         //postEntity.setContentType(REQUEST_CONTENT_TYPE);
 
         HttpPost post = httpFactory.createHttpPost(saltEndpoint + MINION_RESOURCE);
         post.setHeader(SALT_AUTH_TOKEN_HEADER, authToken);
         post.setHeader(REQUEST_ACCEPT_HEADER_NAME, JSON_RESPONSE_ACCEPT_TYPE);
+        post.setHeader("Content-Type", JSON_RESPONSE_ACCEPT_TYPE);
         post.setEntity(postEntity);
-
         
         logWrapper.debug("Submitting job with arguments [%s]", printableParams);
         logWrapper.info("Submitting job with salt-api endpoint: [%s]", post.getURI());
