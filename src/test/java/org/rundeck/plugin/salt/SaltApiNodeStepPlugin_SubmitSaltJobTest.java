@@ -29,6 +29,7 @@ package org.rundeck.plugin.salt;
 import java.util.List;
 import java.util.Set;
 
+import com.google.gson.Gson;
 import org.apache.http.HttpException;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -78,8 +79,11 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
         Assert.assertEquals("Expected mocked jid after submitting job", OUTPUT_JID,
                             plugin.submitJob(latestCapability, client, AUTH_TOKEN, PARAM_MINION_NAME, ImmutableSet.<String> of()));
 
-        assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s&arg=%s&arg=%s", PARAM_FUNCTION, PARAM_MINION_NAME,
-                                                     arg1, arg2);
+//        assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s&arg=%s&arg=%s", PARAM_FUNCTION, PARAM_MINION_NAME,
+//                                                     arg1, arg2);
+
+        Gson gson = new Gson();
+        assertThatSubmitSaltJobAttemptedSuccessfully("{\"args\":[%s,%s],\"fun\":\"%s\",\"kwargs\":[],\"tgt\":\"%s\"}", gson.toJson(arg1), gson.toJson(arg2), PARAM_FUNCTION, PARAM_MINION_NAME);
     }
 
     @Test
@@ -185,7 +189,7 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
         Assert.assertEquals("Expected minion param value", PARAM_MINION_NAME, minionPair.getValue());
         
         NameValuePair argPair = pairs.get(2);
-        Assert.assertEquals("Expected argument param name", SaltApiNodeStepPlugin.SALT_API_ARGUMENTS_PARAM_NAME, argPair.getName());
+        Assert.assertEquals("Expected argument param name", "", argPair.getName());
         Assert.assertEquals("Expected argument param value", "echo ****", argPair.getValue());
     }
     
@@ -206,7 +210,8 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
     }
 
     protected void assertThatSubmitSaltJobAttemptedSuccessfully() {
-        assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s", PARAM_FUNCTION, PARAM_MINION_NAME);
+        //assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s", PARAM_FUNCTION, PARAM_MINION_NAME);
+        assertThatSubmitSaltJobAttemptedSuccessfully("{\"args\":[],\"fun\":\"%s\",\"kwargs\":[],\"tgt\":\"%s\"}", PARAM_FUNCTION, PARAM_MINION_NAME);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

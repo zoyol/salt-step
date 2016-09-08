@@ -48,6 +48,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.rundeck.plugin.salt.output.SaltApiResponseOutput;
@@ -116,7 +118,7 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
     protected static final String LOGOUT_RESOURCE = "/logout";
     protected static final String SALT_AUTH_TOKEN_HEADER = "X-Auth-Token";
     protected static final String CHAR_SET_ENCODING = "UTF-8";
-    protected static final String REQUEST_CONTENT_TYPE = "application/x-www-form-urlencoded";
+    protected static final String REQUEST_CONTENT_TYPE = "application/json";
     protected static final String REQUEST_ACCEPT_HEADER_NAME = "Accept";
     protected static final String JSON_RESPONSE_ACCEPT_TYPE = "application/json";
     protected static final String YAML_RESPONSE_ACCEPT_TYPE = "application/x-yaml";
@@ -338,32 +340,49 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
      */
     protected String submitJob(SaltApiCapability capability, HttpClient client, String authToken, String minionId, Set<String> secureData) throws HttpException, IOException,
             SaltApiException, SaltTargettingMismatchException, InterruptedException {
-        List<NameValuePair> params = Lists.newArrayList();
-        List<NameValuePair> args = ArgumentParser.DEFAULT_ARGUMENT_SPLITTER.parse(function);
-        params.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0).getValue()));
-        params.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, minionId));
-        
-        List<NameValuePair> printableParams = Lists.newArrayList();
-        printableParams.addAll(params);
-        for (int i = 1; i < args.size(); i++) {
-            String name = args.get(i).getName().equals("") ? SALT_API_ARGUMENTS_PARAM_NAME : args.get(i).getName();
-            String value = args.get(i).getValue();
 
-            params.add(new BasicNameValuePair(name, value));
+        //List<NameValuePair> params = Lists.newArrayList();
+        List<NameValuePair> args = ArgumentParser.DEFAULT_ARGUMENT_SPLITTER.parse(function);
+        //params.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0).getValue()));
+        //params.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, minionId));
+
+
+        SaltApiRequest apiRequest = new SaltApiRequest();
+        apiRequest.tgt = minionId;
+        apiRequest.fun = args.get(0).getValue();
+
+        List<NameValuePair> printableParams = Lists.newArrayList();
+        printableParams.add(new BasicNameValuePair(SALT_API_FUNCTION_PARAM_NAME, args.get(0).getValue()));
+        printableParams.add(new BasicNameValuePair(SALT_API_TARGET_PARAM_NAME, minionId));
+
+        for (int i = 1; i < args.size(); i++) {
+            NameValuePair arg = args.get(i);
+
+            if (arg.getName().equals(""))
+                apiRequest.args.add(arg.getValue());
+            else
+                apiRequest.kwargs.add(arg);
+
+            String value = arg.getValue();
 
             for (String s : secureData) {
                 value = StringUtils.replace(value, s, SECURE_OPTION_VALUE);
             }
-            printableParams.add(new BasicNameValuePair(name, value));
+            printableParams.add(new BasicNameValuePair(arg.getName(), value));
         }
-        UrlEncodedFormEntity postEntity = new UrlEncodedFormEntity(params, CHAR_SET_ENCODING);
-        postEntity.setContentEncoding(CHAR_SET_ENCODING);
-        postEntity.setContentType(REQUEST_CONTENT_TYPE);
+
+        //UrlEncodedFormEntity postEntity = new UrlEncodedFormEntity(params, CHAR_SET_ENCODING);
+        //postEntity.setContentEncoding(CHAR_SET_ENCODING);
+        //postEntity.setContentType(REQUEST_CONTENT_TYPE);
+
+        StringEntity postEntity = new StringEntity(new Gson().toJson(apiRequest));
+        //postEntity.setContentType(REQUEST_CONTENT_TYPE);
 
         HttpPost post = httpFactory.createHttpPost(saltEndpoint + MINION_RESOURCE);
         post.setHeader(SALT_AUTH_TOKEN_HEADER, authToken);
         post.setHeader(REQUEST_ACCEPT_HEADER_NAME, JSON_RESPONSE_ACCEPT_TYPE);
         post.setEntity(postEntity);
+
         
         logWrapper.debug("Submitting job with arguments [%s]", printableParams);
         logWrapper.info("Submitting job with salt-api endpoint: [%s]", post.getURI());
