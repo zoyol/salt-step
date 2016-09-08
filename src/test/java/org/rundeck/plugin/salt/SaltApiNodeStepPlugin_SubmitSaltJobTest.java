@@ -83,7 +83,7 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
 //                                                     arg1, arg2);
 
         Gson gson = new Gson();
-        assertThatSubmitSaltJobAttemptedSuccessfully("{\"args\":[%s,%s],\"fun\":\"%s\",\"kwargs\":[],\"tgt\":\"%s\"}", gson.toJson(arg1), gson.toJson(arg2), PARAM_FUNCTION, PARAM_MINION_NAME);
+        assertThatSubmitSaltJobAttemptedSuccessfully("{\"arg\":[%s,%s],\"fun\":\"%s\",\"kwarg\":{},\"tgt\":\"%s\"}", gson.toJson(arg1), gson.toJson(arg2), PARAM_FUNCTION, PARAM_MINION_NAME);
     }
 
     @Test
@@ -211,7 +211,7 @@ public class SaltApiNodeStepPlugin_SubmitSaltJobTest extends AbstractSaltApiNode
 
     protected void assertThatSubmitSaltJobAttemptedSuccessfully() {
         //assertThatSubmitSaltJobAttemptedSuccessfully("fun=%s&tgt=%s", PARAM_FUNCTION, PARAM_MINION_NAME);
-        assertThatSubmitSaltJobAttemptedSuccessfully("{\"args\":[],\"fun\":\"%s\",\"kwargs\":[],\"tgt\":\"%s\"}", PARAM_FUNCTION, PARAM_MINION_NAME);
+        assertThatSubmitSaltJobAttemptedSuccessfully("{\"arg\":[],\"fun\":\"%s\",\"kwarg\":{},\"tgt\":\"%s\"}", PARAM_FUNCTION, PARAM_MINION_NAME);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

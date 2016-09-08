@@ -359,9 +359,9 @@ public class SaltApiNodeStepPlugin implements NodeStepPlugin {
             NameValuePair arg = args.get(i);
 
             if (arg.getName().equals(""))
-                apiRequest.args.add(arg.getValue());
+                apiRequest.arg.add(arg.getValue());
             else
-                apiRequest.kwargs.add(arg);
+                apiRequest.kwarg.put(arg.getName(), arg.getValue());
 
             String value = arg.getValue();
 
