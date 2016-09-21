@@ -10,4 +10,5 @@ handlerMappings:
     file: *alwaysSuccessful
     pkg: *alwaysSuccessful
     test: *alwaysSuccessful
+    saltutil: *alwaysSuccessful
 
